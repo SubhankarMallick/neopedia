@@ -12,8 +12,8 @@ RUN mvn -f "Backend Code/pom.xml" clean package -DskipTests
 FROM eclipse-temurin:25-jre
 WORKDIR /app
 
-# Copy the built jar with quotes around the space-containing path!
-COPY --from=build "/app/Backend Code/target/neopedia-backend-[0-9]*.jar" app.jar
+# Copy using an escaped space instead of confusing quotes around a wildcard pattern
+COPY --from=build /app/Backend\ Code/target/neopedia-backend-1.0.0-SNAPSHOT.jar app.jar
 
 # Copy content and public directories from the root level
 COPY --from=build /app/public ./public
