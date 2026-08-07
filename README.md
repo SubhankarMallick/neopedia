@@ -16,7 +16,7 @@ Knowledge created by the community belongs to the community. Permanently.
 
 - **Educational Content:** Every article, diagram, and lesson on this platform is licensed under the **[Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)](https://creativecommons.org/licenses/by-sa/4.0/)** license.
 
-- **Codebase & Software:** Every line of code powering Neopedia is licensed under the **[GNU General Public License v3.0 (GPLv3)](https://www.google.com/search?q=https://www.gnu.org/licenses/gpl-3.0)**.
+- **Codebase & Software:** Every line of code powering Neopedia is licensed under the [GNU General Public License v3.0 (GPLv3)](https://www.google.com/search?q=https://www.gnu.org/licenses/gpl-3.0).
 
 ### What This Means For You:
 
@@ -36,6 +36,6 @@ Ready to write or review a chapter? Check out **`CONTRIBUTING.md`** for our form
 
 Have ideas to improve the platform or spotted an error in a chapter?
 
-- **GitHub Issues:** Open a detailed suggestion or bug report directly on our [GitHub Page](https://www.google.com/search?q=https://github.com/your-org/neopedia/issues).
+- **GitHub Issues:** Open a detailed suggestion or bug report directly on our [GitHub Page](https://www.google.com/search?q=https://github.com/SubhankarMallick/neopedia/issues).
 
 - **Direct Contact:** You may reach out directly to **Subhankar Mallick** (Founder) in person—provided you actually know him! 
