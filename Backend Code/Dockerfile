@@ -2,10 +2,10 @@
 FROM maven:3.9-eclipse-temurin-25 AS build
 WORKDIR /app
 
-# Copy the backend code folder into the container workspace
-COPY "Backend Code/" ./
+# Copy everything from the root context safely
+COPY . .
 
-# Build the application
+# Build the application (assuming pom.xml is in a subfolder or root)
 RUN mvn clean package -DskipTests
 
 # Step 2: Runtime stage
