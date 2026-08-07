@@ -30,24 +30,60 @@ public class CompilerTest {
 
     @Test
     public void testCompileAllPreservesStructure(@TempDir Path tempDir) throws IOException {
-        Path contentDir = tempDir.resolve("content");
-        Path targetDir = tempDir.resolve("target");
+        Path contentDir = tempDir.resolve("Content");
+        Path publicDir = tempDir.resolve("public");
 
         Path subDir = contentDir.resolve("class-10").resolve("physics");
         Files.createDirectories(subDir);
         Path mdFile = subDir.resolve("light.md");
         Files.writeString(mdFile, "# Light - Reflection and Refraction\n\nSpeed of light $c = 3 \\times 10^8 m/s$.");
 
-        Compiler compiler = new Compiler(contentDir, targetDir);
+        Compiler compiler = new Compiler(contentDir, publicDir);
         long count = compiler.compileAll();
 
         assertEquals(1, count);
 
-        Path expectedHtmlFile = targetDir.resolve("class-10").resolve("physics").resolve("light.html");
+        Path expectedHtmlFile = publicDir.resolve("class-10").resolve("physics").resolve("light.html");
         assertTrue(Files.exists(expectedHtmlFile));
 
         String htmlContent = Files.readString(expectedHtmlFile);
         assertTrue(htmlContent.contains("<title>Light - Reflection and Refraction</title>"));
         assertTrue(htmlContent.contains("Speed of light"));
+    }
+
+    @Test
+    public void testSearch(@TempDir Path tempDir) throws IOException {
+        Path contentDir = tempDir.resolve("Content");
+        Path publicDir = tempDir.resolve("public");
+        Files.createDirectories(contentDir);
+
+        Files.writeString(contentDir.resolve("math.md"), "# Mathematics\n\nBasic math concepts.");
+        Files.writeString(contentDir.resolve("physics.md"), "# Physics\n\nPhysics concepts.");
+        Files.writeString(contentDir.resolve("chemistry.md"), "# Chemistry\n\nChemical reactions.");
+
+        Compiler compiler = new Compiler(contentDir, publicDir);
+        compiler.compileAll();
+
+        List<Compiler.SearchResult> results = compiler.search("math", 10);
+        assertFalse(results.isEmpty());
+        assertTrue(results.stream().anyMatch(r -> r.title().contains("Mathematics")));
+    }
+
+    @Test
+    public void testJITCompilation(@TempDir Path tempDir) throws IOException {
+        Path contentDir = tempDir.resolve("Content");
+        Path publicDir = tempDir.resolve("public");
+        Files.createDirectories(contentDir);
+
+        Files.writeString(contentDir.resolve("new-file.md"), "# New File\n\nNew content.");
+
+        Compiler compiler = new Compiler(contentDir, publicDir);
+
+        Path targetFile = publicDir.resolve("new-file.html");
+        assertFalse(Files.exists(targetFile));
+
+        boolean success = compiler.compileSingleJIT("new-file.md");
+        assertTrue(success);
+        assertTrue(Files.exists(targetFile));
     }
 }
