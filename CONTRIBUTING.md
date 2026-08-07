@@ -1,6 +1,6 @@
 # How to contribute to our cause?
 
-To contribute to our cause, you may do the following - 
+To contribute to our cause, you may do the following -
 
 - Contact Subhankar Mallick in person (if you know him) for helping to create the articles for the website or help develop the backend.
 
@@ -12,22 +12,6 @@ Use any markdown formatting app like Obsidian, MarkText or any other app that ha
 
 ## For Article Writers
 
-Refer to `ARTICLE_WRITING.md` in
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+Refer to [ARTICLE_WRITING.md](./ARTICLE_WRITING.md) for our full authoring standards, formula formatting rules, and document structure guidelines.
 
 
