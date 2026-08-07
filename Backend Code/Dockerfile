@@ -9,7 +9,7 @@ COPY . .
 RUN mvn clean package -DskipTests
 
 # Step 2: Runtime stage
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:25-jre
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 7070
