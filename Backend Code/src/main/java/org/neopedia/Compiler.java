@@ -27,25 +27,25 @@ public class Compiler {
     private final Parser parser;
     private final HtmlRenderer renderer;
     private final Path contentDir;
-    private final Path publicDir;
+    private final Path targetDir;
 
     /**
      * Default constructor initializing Flexmark parser and renderer
-     * with default content and public directories.
+     * with default content and target directories.
      */
     public Compiler() {
-        this(resolveDefaultContentDir(), resolveDefaultPublicDir());
+        this(resolveDefaultContentDir(), resolveDefaultTargetDir());
     }
 
     /**
-     * Constructs a Compiler with explicitly specified content and public directories.
+     * Constructs a Compiler with explicitly specified content and target directories.
      *
      * @param contentDir The source directory containing Markdown content.
-     * @param publicDir  The target public directory for compiled HTML files.
+     * @param targetDir  The target directory for compiled HTML files.
      */
-    public Compiler(Path contentDir, Path publicDir) {
+    public Compiler(Path contentDir, Path targetDir) {
         this.contentDir = contentDir;
-        this.publicDir = publicDir;
+        this.targetDir = targetDir;
 
         MutableDataSet options = new MutableDataSet();
         options.set(Parser.EXTENSIONS, Arrays.asList(
@@ -64,35 +64,35 @@ public class Compiler {
      */
     public static Path resolveDefaultContentDir() {
         List<Path> candidates = List.of(
-                Path.of("content"),
-                Path.of("Content"),
                 Path.of("../content"),
-                Path.of("../Content")
+                Path.of("../Content"),
+                Path.of("content"),
+                Path.of("Content")
         );
         for (Path candidate : candidates) {
             if (Files.exists(candidate) && Files.isDirectory(candidate)) {
                 return candidate.toAbsolutePath().normalize();
             }
         }
-        return Path.of("content").toAbsolutePath().normalize();
+        return Path.of("../content").toAbsolutePath().normalize();
     }
 
     /**
-     * Resolves default directory location for compiled public output.
+     * Resolves default directory location for compiled target output.
      *
-     * @return Path to the public directory.
+     * @return Path to the target directory.
      */
-    public static Path resolveDefaultPublicDir() {
+    public static Path resolveDefaultTargetDir() {
         List<Path> candidates = List.of(
-                Path.of("public"),
-                Path.of("../public")
+                Path.of("../target"),
+                Path.of("target")
         );
         for (Path candidate : candidates) {
             if (Files.exists(candidate) && Files.isDirectory(candidate)) {
                 return candidate.toAbsolutePath().normalize();
             }
         }
-        return Path.of("public").toAbsolutePath().normalize();
+        return Path.of("../target").toAbsolutePath().normalize();
     }
 
     /**
@@ -247,9 +247,9 @@ public class Compiler {
         }
 
         try {
-            Files.createDirectories(publicDir);
+            Files.createDirectories(targetDir);
         } catch (IOException e) {
-            logger.error("Failed to create public directory: {}", publicDir, e);
+            logger.error("Failed to create target directory: {}", targetDir, e);
         }
 
         long count = 0;
@@ -271,7 +271,7 @@ public class Compiler {
             logger.error("Error walking content directory: {}", contentDir, e);
         }
 
-        logger.info("Compilation finished. Successfully compiled {} file(s) into {}", count, publicDir);
+        logger.info("Compilation finished. Successfully compiled {} file(s) into {}", count, targetDir);
         return count;
     }
 
@@ -286,7 +286,7 @@ public class Compiler {
         String relativeString = relativePath.toString();
         String htmlRelativeString = relativeString.replaceAll("(?i)\\.md$", ".html");
 
-        Path targetHtmlPath = publicDir.resolve(htmlRelativeString);
+        Path targetHtmlPath = targetDir.resolve(htmlRelativeString);
         Files.createDirectories(targetHtmlPath.getParent());
 
         String rawContent = Files.readString(mdPath);
@@ -338,11 +338,11 @@ public class Compiler {
     }
 
     /**
-     * Gets the public directory path used by this Compiler.
+     * Gets the target directory path used by this Compiler.
      *
-     * @return Public directory path.
+     * @return Target directory path.
      */
-    public Path getPublicDir() {
-        return publicDir;
+    public Path getTargetDir() {
+        return targetDir;
     }
 }

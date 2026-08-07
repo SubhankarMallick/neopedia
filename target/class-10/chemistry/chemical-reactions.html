@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemical Reactions and Equations</title>
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" crossorigin="anonymous">
+    <!-- KaTeX JS & Auto-render plugin -->
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderKaTeX()"></script>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #24292f;
+            --primary-color: #0969da;
+            --border-color: #d0d7de;
+            --code-bg: #f6f8fa;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #0d1117;
+                --text-color: #c9d1d9;
+                --primary-color: #58a6ff;
+                --border-color: #30363d;
+                --code-bg: #161b22;
+            }
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 2rem 1rem;
+        }
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--text-color);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.3em;
+            margin-top: 1.5em;
+        }
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        pre, code {
+            background-color: var(--code-bg);
+            border-radius: 6px;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+        }
+        code {
+            padding: 0.2em 0.4em;
+            font-size: 85%;
+        }
+        pre code {
+            padding: 1em;
+            display: block;
+            overflow-x: auto;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1rem 0;
+        }
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: var(--code-bg);
+        }
+        blockquote {
+            margin: 0;
+            padding: 0 1em;
+            color: #57606a;
+            border-left: 0.25em solid var(--border-color);
+        }
+    </style>
+    <script>
+        function renderKaTeX() {
+            if (typeof renderMathInElement === 'function') {
+                renderMathInElement(document.body, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false},
+                        {left: '\(', right: '\)', display: false},
+                        {left: '\[', right: '\]', display: true}
+                    ],
+                    throwOnError: false
+                });
+                document.querySelectorAll('span.math.inline, span.math.display').forEach(function(el) {
+                    var displayMode = el.classList.contains('display');
+                    var tex = el.textContent;
+                    if (typeof katex !== 'undefined') {
+                        try {
+                            katex.render(tex, el, { displayMode: displayMode, throwOnError: false });
+                        } catch(e) {}
+                    }
+                });
+            }
+        }
+        document.addEventListener("DOMContentLoaded", renderKaTeX);
+    </script>
+</head>
+<body>
+    <main class="container">
+<h1>Chemical Reactions and Equations</h1>
+<p>Chemical reactions are processes in which one or more substances, the reactants, are converted to one or more different substances, the products.</p>
+<h2>Key Concepts</h2>
+<ul>
+<li><strong>Reactants</strong>: The starting materials in a chemical reaction.</li>
+<li><strong>Products</strong>: The substances formed as a result of a chemical reaction.</li>
+<li><strong>Conservation of Mass</strong>: Mass is neither created nor destroyed in a chemical reaction.</li>
+</ul>
+<h2>Important Equations</h2>
+<p>Mass-energy equivalence equation proposed by Albert Einstein:</p>
+<p>Inline math example: $E = mc^2$</p>
+<p>Quadratic formula used in stoichiometric calculations:</p>
+<p>Block formula example:</p>
+<p>$$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}$$</p>
+<h2>Types of Chemical Reactions</h2>
+<ol>
+<li>Combination Reaction</li>
+<li>Decomposition Reaction</li>
+<li>Displacement Reaction</li>
+<li>Double Displacement Reaction</li>
+<li>Oxidation and Reduction (Redox) Reactions</li>
+</ol>
+
+    </main>
+</body>
+</html>

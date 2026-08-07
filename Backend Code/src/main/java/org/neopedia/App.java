@@ -38,13 +38,13 @@ public class App {
         long initialCount = compiler.compileAll();
         logger.info("Initial build completed with {} file(s).", initialCount);
 
-        Path publicDirPath = compiler.getPublicDir();
-        logger.info("Serving static files from external directory: {}", publicDirPath);
+        Path targetDirPath = compiler.getTargetDir();
+        logger.info("Serving static files from external directory: {}", targetDirPath);
 
         Javalin app = Javalin.create(config -> {
             config.staticFiles.add(staticFile -> {
                 staticFile.hostedPath = "/";
-                staticFile.directory = publicDirPath.toAbsolutePath().toString();
+                staticFile.directory = targetDirPath.toAbsolutePath().toString();
                 staticFile.location = Location.EXTERNAL;
             });
         });

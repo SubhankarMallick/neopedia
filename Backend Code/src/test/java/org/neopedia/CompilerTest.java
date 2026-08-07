@@ -31,19 +31,19 @@ public class CompilerTest {
     @Test
     public void testCompileAllPreservesStructure(@TempDir Path tempDir) throws IOException {
         Path contentDir = tempDir.resolve("content");
-        Path publicDir = tempDir.resolve("public");
+        Path targetDir = tempDir.resolve("target");
 
         Path subDir = contentDir.resolve("class-10").resolve("physics");
         Files.createDirectories(subDir);
         Path mdFile = subDir.resolve("light.md");
         Files.writeString(mdFile, "# Light - Reflection and Refraction\n\nSpeed of light $c = 3 \\times 10^8 m/s$.");
 
-        Compiler compiler = new Compiler(contentDir, publicDir);
+        Compiler compiler = new Compiler(contentDir, targetDir);
         long count = compiler.compileAll();
 
         assertEquals(1, count);
 
-        Path expectedHtmlFile = publicDir.resolve("class-10").resolve("physics").resolve("light.html");
+        Path expectedHtmlFile = targetDir.resolve("class-10").resolve("physics").resolve("light.html");
         assertTrue(Files.exists(expectedHtmlFile));
 
         String htmlContent = Files.readString(expectedHtmlFile);
