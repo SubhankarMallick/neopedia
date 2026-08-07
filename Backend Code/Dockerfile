@@ -11,6 +11,6 @@ RUN mvn clean package -DskipTests
 # Step 2: Runtime stage
 FROM eclipse-temurin:25-jre
 WORKDIR /app
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=build /app/target/neopedia-backend-1.0.0-SNAPSHOT-shaded.jar app.jar
 EXPOSE 7070
 CMD ["java", "-jar", "app.jar"]
