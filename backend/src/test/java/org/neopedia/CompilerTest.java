@@ -31,7 +31,7 @@ public class CompilerTest {
 
     @Test
     public void testCompileAllPreservesStructure(@TempDir Path tempDir) throws IOException {
-        Path contentDir = tempDir.resolve("Content");
+        Path contentDir = tempDir.resolve("content");
         Path publicDir = tempDir.resolve("public");
 
         Path subDir = contentDir.resolve("class-10").resolve("physics");
@@ -54,7 +54,7 @@ public class CompilerTest {
 
     @Test
     public void testSearch(@TempDir Path tempDir) throws IOException {
-        Path contentDir = tempDir.resolve("Content");
+        Path contentDir = tempDir.resolve("content");
         Path publicDir = tempDir.resolve("public");
         Files.createDirectories(contentDir);
 
@@ -72,7 +72,7 @@ public class CompilerTest {
 
     @Test
     public void testJITCompilation(@TempDir Path tempDir) throws IOException {
-        Path contentDir = tempDir.resolve("Content");
+        Path contentDir = tempDir.resolve("content");
         Path publicDir = tempDir.resolve("public");
         Files.createDirectories(contentDir);
 
@@ -86,5 +86,44 @@ public class CompilerTest {
         boolean success = compiler.compileSingleJIT("new-file.md");
         assertTrue(success);
         assertTrue(Files.exists(targetFile));
+    }
+
+    @Test
+    public void testCompileAllRemovesDeletedMarkdownOutput(@TempDir Path tempDir) throws IOException {
+        Path contentDir = tempDir.resolve("content");
+        Path publicDir = tempDir.resolve("public");
+        Path article = contentDir.resolve("class-10").resolve("chemistry").resolve("chemical-reactions.md");
+        Files.createDirectories(article.getParent());
+        Files.writeString(article, "# Chemical Reactions");
+
+        Compiler compiler = new Compiler(contentDir, publicDir);
+        compiler.compileAll();
+        Path generatedArticle = publicDir.resolve("class-10").resolve("chemistry").resolve("chemical-reactions.html");
+        assertTrue(Files.exists(generatedArticle));
+
+        Files.delete(article);
+        compiler.compileAll();
+        assertFalse(Files.exists(generatedArticle));
+    }
+
+    @Test
+    public void testHomepageIsExcludedAndSearchRequiresRelevantTerms(@TempDir Path tempDir) throws IOException {
+        Path contentDir = tempDir.resolve("content");
+        Path publicDir = tempDir.resolve("public");
+        Files.createDirectories(contentDir);
+        Files.writeString(contentDir.resolve("index.md"), "# Neopedia Homepage");
+        Files.writeString(contentDir.resolve("chemical-reactions.md"), "# Chemical Reactions");
+        Files.writeString(contentDir.resolve("types-of-chemical-reactions.md"), "# Types of Chemical Reactions");
+        Files.writeString(contentDir.resolve("cell-structure.md"), "# Cell Structure");
+
+        Compiler compiler = new Compiler(contentDir, publicDir);
+        compiler.compileAll();
+
+        assertTrue(Files.exists(publicDir.resolve("index.html")));
+        assertTrue(compiler.search("homepage", 10).isEmpty());
+        List<Compiler.SearchResult> results = compiler.search("chemical reactions", 10);
+        assertEquals(2, results.size());
+        assertTrue(results.stream().allMatch(result -> result.title().contains("Chemical")));
+        assertEquals(2, compiler.search("chemcial reactions", 10).size());
     }
 }

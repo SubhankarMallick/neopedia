@@ -5,18 +5,17 @@ WORKDIR /app
 # Copy the entire project root context
 COPY . .
 
-# Build using the pom.xml located inside the Backend Code directory
-RUN mvn -f "Backend Code/pom.xml" clean package -DskipTests
+# Build the backend from its lowercase project directory.
+RUN mvn -f backend/pom.xml clean package -DskipTests
 
 # Step 2: Runtime stage
 FROM eclipse-temurin:25-jre
 WORKDIR /app
 
-# Copy using JSON array form so Docker can't mess up the space in "Backend Code"
-COPY --from=build ["/app/Backend Code/target/neopedia-backend-1.0.0-SNAPSHOT.jar", "app.jar"]
+COPY --from=build /app/backend/target/neopedia-backend-1.0.0-SNAPSHOT.jar app.jar
 
-# Copy content and public directories from the root level
-COPY --from=build /app/public ./public
+# Copy runtime content and generated-page directory.
+COPY --from=build /app/backend/public ./backend/public
 COPY --from=build /app/content ./content
 
 EXPOSE 7070

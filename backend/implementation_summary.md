@@ -33,21 +33,21 @@
 
 #### Folder Index Pages
 - `generateFolderIndexPages()` method
-- Automatically generates index.html for each folder in Content/
+- Automatically generates index.html for each folder in content/
 - If folder has index.md, compiles it
 - Otherwise, creates auto-generated index listing all .md files
-- Creates root index.html from Content/index.md or default content
+- Creates root index.html from content/index.md or default content
 
 #### Homepage
-- Created `Content/index.md` with information from README.md
+- Created `content/index.md` with information from README.md
 - Includes mission statement, features, license info
 - Rendered with full template (logo, search bar, footer)
 
 ### 2. App.java Updates
 
 #### Static File Serving
-- Configured to serve from `public/` directory (Location.EXTERNAL)
-- GET "/" serves public/index.html
+- Configured to serve from `backend/public/` directory (Location.EXTERNAL)
+- GET "/" serves backend/public/index.html
 
 #### API Endpoints
 - `GET /api/health` - Health check
@@ -64,18 +64,18 @@
 
 ```
 The Neopedia Project/
-├── Backend Code/
-│   └── src/main/java/org/neopedia/
-│       ├── App.java          (Javalin server with JIT & search)
-│       └── Compiler.java     (Markdown compiler with search & JIT)
-│   └── src/test/java/org/neopedia/
-│       └── CompilerTest.java (Unit tests)
-├── Content/
-│   ├── index.md            (Homepage content)
-│   └── class-10/chemistry/
-│       └── chemical-reactions.md (Sample content)
-└── public/
-    └── .gitkeep            (Git tracking)
+├── backend/
+│   ├── src/main/java/org/neopedia/
+│   │   ├── App.java          (Javalin server with JIT & search)
+│   │   └── Compiler.java     (Markdown compiler with search & JIT)
+│   ├── src/test/java/org/neopedia/
+│   │   └── CompilerTest.java (Unit tests)
+│   └── public/
+│       └── .gitkeep          (Git tracking)
+└── content/
+    ├── index.md              (Homepage content)
+    └── class-10/chemistry/
+        └── chemical-reactions.md (Sample content)
 ```
 
 ### 4. Features Implemented
@@ -95,7 +95,7 @@ The Neopedia Project/
 
 #### Start Server
 ```bash
-cd "C:/Users/jyoti/Desktop/The Neopedia Project/Backend Code"
+cd "C:/Users/jyoti/Desktop/The Neopedia Project/backend"
 mvn exec:java
 ```
 

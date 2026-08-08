@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -67,9 +68,7 @@ public class Compiler {
      */
     public static Path resolveDefaultContentDir() {
         List<Path> candidates = List.of(
-                Path.of("Content"),
                 Path.of("content"),
-                Path.of("../Content"),
                 Path.of("../content")
         );
         for (Path candidate : candidates) {
@@ -77,7 +76,7 @@ public class Compiler {
                 return candidate.toAbsolutePath().normalize();
             }
         }
-        return Path.of("Content").toAbsolutePath().normalize();
+        return Path.of("content").toAbsolutePath().normalize();
     }
 
     /**
@@ -88,7 +87,8 @@ public class Compiler {
     public static Path resolveDefaultPublicDir() {
         List<Path> candidates = List.of(
                 Path.of("public"),
-                Path.of("../public")
+                Path.of("backend", "public"),
+                Path.of("..", "backend", "public")
         );
         for (Path candidate : candidates) {
             if (Files.exists(candidate) && Files.isDirectory(candidate)) {
@@ -301,7 +301,7 @@ public class Compiler {
                 <body>
                     <header class="header">
                         <div class="header-content">
-                            <div class="logo"><span>NEOPEDIA</span></div>
+                            <a class="logo" href="/" aria-label="Neopedia home"><span>NEOPEDIA</span></a>
                             <div class="tagline">Free. Open. Education for All.</div>
                         </div>
                     </header>
@@ -395,6 +395,9 @@ public class Compiler {
             for (Path mdPath : mdFiles) {
                 try {
                     Path relativePath = contentDir.relativize(mdPath);
+                    if (relativePath.getNameCount() == 1 && "index.md".equalsIgnoreCase(relativePath.getFileName().toString())) {
+                        continue;
+                    }
                     String relativeString = relativePath.toString();
                     String htmlRelativeString = relativeString.replaceAll("(?i)\\.md$", ".html");
                     String rawContent = Files.readString(mdPath);
@@ -417,22 +420,49 @@ public class Compiler {
      */
     private double calculateSimilarity(String query, String target) {
         if (query == null || query.isBlank() || target == null || target.isBlank()) return 0.0;
-        String lowerQuery = query.toLowerCase();
-        String lowerTarget = target.toLowerCase();
-        if (lowerTarget.contains(lowerQuery)) return 1.0;
-        String[] queryWords = lowerQuery.split("\\s+");
-        String[] targetWords = lowerTarget.split("\\s+");
+        String normalizedQuery = normalizeText(query);
+        String normalizedTarget = normalizeText(target);
+        if (normalizedQuery.isBlank() || normalizedTarget.isBlank()) return 0.0;
+        if (normalizedTarget.equals(normalizedQuery)) return 1.0;
+        if (normalizedTarget.contains(normalizedQuery)) return 0.95;
+
+        List<String> queryWords = tokenize(normalizedQuery);
+        List<String> targetWords = tokenize(normalizedTarget);
         int matchedWords = 0;
-        for (String qWord : queryWords) {
-            if (qWord.isBlank()) continue;
-            for (String tWord : targetWords) {
-                if (tWord.contains(qWord) || qWord.contains(tWord)) { matchedWords++; break; }
+        double matchQuality = 0.0;
+        for (String queryWord : queryWords) {
+            double best = targetWords.stream().mapToDouble(targetWord -> wordSimilarity(queryWord, targetWord)).max().orElse(0.0);
+            if (best >= 0.72) {
+                matchedWords++;
+                matchQuality += best;
             }
         }
-        double levenshteinScore = 1.0 - (double) computeLevenshteinDistance(lowerQuery, lowerTarget) /
-                Math.max(lowerQuery.length(), lowerTarget.length());
-        double wordScore = queryWords.length > 0 ? (double) matchedWords / queryWords.length : 0.0;
-        return (wordScore * 0.7) + (levenshteinScore * 0.3);
+        int minimumMatches = queryWords.size() == 1 ? 1 : (int) Math.ceil(queryWords.size() * 0.6);
+        if (matchedWords < minimumMatches) return 0.0;
+        return 0.55 * ((double) matchedWords / queryWords.size()) + 0.45 * (matchQuality / matchedWords);
+    }
+
+    private String normalizeText(String value) {
+        return value.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", " ").trim();
+    }
+
+    private List<String> tokenize(String value) {
+        return Arrays.stream(value.split("\\s+"))
+                .filter(word -> !word.isBlank())
+                .map(this::singularize)
+                .toList();
+    }
+
+    private String singularize(String word) {
+        return word.length() > 3 && word.endsWith("s") ? word.substring(0, word.length() - 1) : word;
+    }
+
+    private double wordSimilarity(String left, String right) {
+        if (left.equals(right)) return 1.0;
+        if (left.length() >= 3 && right.length() >= 3 && (left.startsWith(right) || right.startsWith(left))) return 0.9;
+        int longest = Math.max(left.length(), right.length());
+        if (longest < 4) return 0.0;
+        return 1.0 - (double) computeLevenshteinDistance(left, right) / longest;
     }
 
     /**
@@ -463,10 +493,10 @@ public class Compiler {
                 .map(result -> {
                     double titleScore = calculateSimilarity(query, result.title());
                     double pathScore = calculateSimilarity(query, result.path());
-                    double combinedScore = (titleScore * 0.7) + (pathScore * 0.3);
+                    double combinedScore = (titleScore * 0.8) + (pathScore * 0.2);
                     return new SearchResult(result.title(), result.path(), result.url(), combinedScore);
                 })
-                .filter(result -> result.score() > 0.0)
+                .filter(result -> result.score() >= 0.45)
                 .sorted(Comparator.comparingDouble(SearchResult::score).reversed())
                 .limit(maxResults)
                 .collect(Collectors.toList());
@@ -604,9 +634,63 @@ public class Compiler {
                 try { compileSingleFile(mdPath); count++; } catch (Exception e) { logger.error("Error compiling markdown file: {}", mdPath, e); }
             }
             generateFolderIndexPages();
+            removeStaleGeneratedHtml();
         } catch (IOException e) { logger.error("Error walking content directory: {}", contentDir, e); }
         logger.info("Compilation finished. Successfully compiled {} file(s) into {}", count, publicDir);
         return count;
+    }
+
+    /**
+     * Removes generated article pages whose source Markdown no longer exists. Generated
+     * directory indexes are also removed when their corresponding content directory is gone.
+     */
+    private void removeStaleGeneratedHtml() throws IOException {
+        if (!Files.exists(publicDir)) return;
+        try (Stream<Path> stream = Files.walk(publicDir)) {
+            List<Path> staleFiles = stream.filter(Files::isRegularFile)
+                    .filter(path -> path.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".html"))
+                    .filter(this::isGeneratedPage)
+                    .filter(this::hasNoSource)
+                    .toList();
+            for (Path staleFile : staleFiles) {
+                Files.deleteIfExists(staleFile);
+                logger.info("Removed stale generated page: {}", publicDir.relativize(staleFile));
+            }
+        }
+        pruneEmptyGeneratedDirectories();
+    }
+
+    private boolean isGeneratedPage(Path htmlFile) {
+        try {
+            return Files.readString(htmlFile).contains("<span>NEOPEDIA</span>");
+        } catch (IOException e) {
+            logger.warn("Unable to inspect generated page: {}", htmlFile, e);
+            return false;
+        }
+    }
+
+    private boolean hasNoSource(Path htmlFile) {
+        Path relative = publicDir.relativize(htmlFile);
+        if (relative.getNameCount() == 1 && "index.html".equalsIgnoreCase(relative.getFileName().toString())) return false;
+        if ("index.html".equalsIgnoreCase(relative.getFileName().toString())) {
+            return !Files.isDirectory(contentDir.resolve(relative).getParent());
+        }
+        String markdownName = relative.getFileName().toString().replaceFirst("(?i)\\.html$", ".md");
+        return !Files.exists(contentDir.resolve(relative).resolveSibling(markdownName));
+    }
+
+    private void pruneEmptyGeneratedDirectories() throws IOException {
+        try (Stream<Path> stream = Files.walk(publicDir)) {
+            List<Path> directories = stream.filter(Files::isDirectory)
+                    .filter(path -> !path.equals(publicDir))
+                    .sorted(Comparator.reverseOrder())
+                    .toList();
+            for (Path directory : directories) {
+                try (Stream<Path> children = Files.list(directory)) {
+                    if (children.findAny().isEmpty()) Files.delete(directory);
+                }
+            }
+        }
     }
 
     /**
