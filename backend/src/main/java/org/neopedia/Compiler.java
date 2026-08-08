@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Static site compiler engine for The Neopedia Project.
@@ -27,6 +29,8 @@ import java.util.stream.Stream;
 public class Compiler {
 
     private static final Logger logger = LoggerFactory.getLogger(Compiler.class);
+    private static final Pattern FIRST_H1_PATTERN = Pattern.compile("(?m)^\\s*#\\s+(.+?)\\s*$");
+    private static final Pattern LEVEL_SUFFIX_PATTERN = Pattern.compile("(?i)^(.*?)(?:\\s*:\\s*level\\s+(.+?))\\s*$");
 
     private final Parser parser;
     private final HtmlRenderer renderer;
@@ -259,6 +263,17 @@ public class Compiler {
                         .search-result-item a { display: block; text-decoration: none; color: var(--text-color); }
                         .search-result-item h3 { margin: 0 0 0.5rem 0; border-bottom: none; padding-bottom: 0; margin-top: 0; }
                         .result-path { font-size: 0.85rem; color: #6e7681; display: block; }
+                        .level-tag {
+                            display: inline-block;
+                            margin: 0.35rem 0 1rem;
+                            padding: 0.2rem 0.65rem;
+                            border: 1px solid var(--primary-color);
+                            border-radius: 999px;
+                            color: var(--primary-color);
+                            font-size: 0.85rem;
+                            font-weight: 600;
+                        }
+                        .search-result-excerpt { display: block; margin-top: 0.5rem; color: #6e7681; }
                         @media (max-width: 768px) {
                             .header { padding: 1rem; }
                             .logo { font-size: 1.8rem; }
@@ -331,14 +346,36 @@ public class Compiler {
      * Helper method to extract or derive a human-readable title for the Markdown document.
      */
     private String extractTitle(String markdownContent, String fileName) {
+        return extractArticleMetadata(markdownContent, fileName, false).title();
+    }
+
+    /** Metadata from an article's first H1. Filenames are only a title fallback. */
+    public record ArticleMetadata(String title, String level, String excerpt) {}
+
+    private ArticleMetadata extractArticleMetadata(String markdownContent, String fileName, boolean logWarnings) {
+        String h1 = null;
         if (markdownContent != null) {
-            for (String line : markdownContent.lines().toList()) {
-                String trimmed = line.trim();
-                if (trimmed.startsWith("# ")) {
-                    return trimmed.substring(2).trim();
-                }
-            }
+            Matcher headingMatcher = FIRST_H1_PATTERN.matcher(markdownContent);
+            if (headingMatcher.find()) h1 = headingMatcher.group(1).trim();
         }
+
+        if (h1 != null && !h1.isBlank()) {
+            Matcher levelMatcher = LEVEL_SUFFIX_PATTERN.matcher(h1);
+            if (levelMatcher.matches()) {
+                String title = levelMatcher.group(1).trim();
+                String levelNumber = levelMatcher.group(2).trim();
+                String label = levelLabel(levelNumber);
+                if (label != null && !title.isBlank()) {
+                    return new ArticleMetadata(title, label, createExcerpt(markdownContent));
+                }
+                warnInvalidLevel(logWarnings, fileName, "expected a level number from 1 to 6");
+                return new ArticleMetadata(title.isBlank() ? h1 : title, "Unknown", createExcerpt(markdownContent));
+            }
+            warnInvalidLevel(logWarnings, fileName, "missing the required ': Level 1' through ': Level 6' suffix");
+            return new ArticleMetadata(h1, "Unknown", createExcerpt(markdownContent));
+        }
+
+        warnInvalidLevel(logWarnings, fileName, "missing a first H1 heading");
         if (fileName != null && !fileName.isBlank()) {
             String nameWithoutExt = fileName.replaceAll("(?i)\\.md$", "");
             String[] words = nameWithoutExt.split("[-_]");
@@ -349,9 +386,40 @@ public class Compiler {
                     sb.append(Character.toUpperCase(w.charAt(0))).append(w.substring(1));
                 }
             }
-            return sb.toString();
+            return new ArticleMetadata(sb.toString(), "Unknown", createExcerpt(markdownContent));
         }
-        return "Neopedia Document";
+        return new ArticleMetadata("Neopedia Document", "Unknown", createExcerpt(markdownContent));
+    }
+
+    private void warnInvalidLevel(boolean logWarnings, String fileName, String reason) {
+        if (logWarnings) logger.warn("Article '{}' has invalid level metadata: {}; using Unknown", fileName, reason);
+    }
+
+    private String levelLabel(String levelNumber) {
+        return switch (levelNumber) {
+            case "1" -> "6–8";
+            case "2" -> "9–10";
+            case "3" -> "11–12";
+            case "4" -> "Undergraduate";
+            case "5" -> "Graduate";
+            case "6" -> "PhD";
+            default -> null;
+        };
+    }
+
+    private String createExcerpt(String markdownContent) {
+        if (markdownContent == null) return "";
+        String text = markdownContent.replaceFirst("(?m)^\\s*#\\s+.*(?:\\R|$)", "")
+                .replaceAll("[`*_>#\\[\\]]", " ")
+                .replaceAll("\\s+", " ").trim();
+        return text.length() <= 180 ? text : text.substring(0, 177).trim() + "…";
+    }
+
+    private String compileArticleToHtml(ArticleMetadata metadata, String markdownContent) {
+        String body = markdownContent == null ? "" : markdownContent.replaceFirst("(?m)^\\s*#\\s+.*(?:\\R|$)", "");
+        String articleMarkdown = "# " + metadata.title() + "\n\n<span class=\"level-tag\">[ "
+                + metadata.level() + " ]</span>\n\n" + body;
+        return compileToHtml(metadata.title(), articleMarkdown);
     }
 
     /**
@@ -378,7 +446,7 @@ public class Compiler {
     /**
      * Record for search results.
      */
-    public record SearchResult(String title, String path, String url, double score) {}
+    public record SearchResult(String title, String level, String excerpt, String path, String url, double score) {}
 
     /**
      * Gets all markdown files for search indexing.
@@ -401,10 +469,10 @@ public class Compiler {
                     String relativeString = relativePath.toString();
                     String htmlRelativeString = relativeString.replaceAll("(?i)\\.md$", ".html");
                     String rawContent = Files.readString(mdPath);
-                    String title = extractTitle(rawContent, mdPath.getFileName().toString());
+                    ArticleMetadata metadata = extractArticleMetadata(rawContent, mdPath.getFileName().toString(), false);
                     String url = "/" + htmlRelativeString.replace("\\", "/");
                     if (url.startsWith("//")) url = url.substring(1);
-                    results.add(new SearchResult(title, relativeString, url, 0.0));
+                    results.add(new SearchResult(metadata.title(), metadata.level(), metadata.excerpt(), relativeString, url, 0.0));
                 } catch (IOException e) {
                     logger.error("Error reading file for search: {}", mdPath, e);
                 }
@@ -438,7 +506,8 @@ public class Compiler {
             }
         }
         int minimumMatches = queryWords.size() == 1 ? 1 : (int) Math.ceil(queryWords.size() * 0.6);
-        if (matchedWords < minimumMatches) return 0.0;
+        boolean strongRelatedTitleTerm = queryWords.size() == 2 && matchedWords == 1 && matchQuality >= 0.85;
+        if (matchedWords < minimumMatches && !strongRelatedTitleTerm) return 0.0;
         return 0.55 * ((double) matchedWords / queryWords.size()) + 0.45 * (matchQuality / matchedWords);
     }
 
@@ -493,8 +562,9 @@ public class Compiler {
                 .map(result -> {
                     double titleScore = calculateSimilarity(query, result.title());
                     double pathScore = calculateSimilarity(query, result.path());
-                    double combinedScore = (titleScore * 0.8) + (pathScore * 0.2);
-                    return new SearchResult(result.title(), result.path(), result.url(), combinedScore);
+                    double bodyScore = calculateSimilarity(query, result.excerpt());
+                    double combinedScore = (titleScore * 0.8) + (pathScore * 0.1) + (bodyScore * 0.1);
+                    return new SearchResult(result.title(), result.level(), result.excerpt(), result.path(), result.url(), combinedScore);
                 })
                 .filter(result -> result.score() >= 0.45)
                 .sorted(Comparator.comparingDouble(SearchResult::score).reversed())
@@ -517,6 +587,11 @@ public class Compiler {
                 resultsHtml.append("<li class=\"search-result-item\">");
                 resultsHtml.append("<a href=\"").append(escapeHtml(result.url())).append("\">");
                 resultsHtml.append("<h3>").append(escapeHtml(result.title())).append("</h3>");
+                resultsHtml.append("<span class=\"level-tag\">[ ").append(escapeHtml(result.level())).append(" ]</span>");
+                if (!result.excerpt().isBlank()) {
+                    resultsHtml.append("<span class=\"search-result-excerpt\">")
+                            .append(escapeHtml(result.excerpt())).append("</span>");
+                }
                 resultsHtml.append("<span class=\"result-path\">").append(escapeHtml(result.path())).append("</span>");
                 resultsHtml.append("</a></li>");
             }
@@ -545,8 +620,14 @@ public class Compiler {
         Path targetHtmlPath = publicDir.resolve(htmlRelativeString);
         Files.createDirectories(targetHtmlPath.getParent());
         String rawContent = Files.readString(mdPath);
-        String title = extractTitle(rawContent, mdPath.getFileName().toString());
-        String compiledHtml = compileToHtml(title, rawContent);
+        boolean isHomepage = relativePath.getNameCount() == 1 && "index.md".equalsIgnoreCase(relativePath.getFileName().toString());
+        String compiledHtml;
+        if (isHomepage) {
+            compiledHtml = compileToHtml(extractTitle(rawContent, mdPath.getFileName().toString()), rawContent);
+        } else {
+            ArticleMetadata metadata = extractArticleMetadata(rawContent, mdPath.getFileName().toString(), true);
+            compiledHtml = compileArticleToHtml(metadata, rawContent);
+        }
         Files.writeString(targetHtmlPath, compiledHtml);
         logger.debug("Compiled: {} -> {}", relativePath, htmlRelativeString);
     }

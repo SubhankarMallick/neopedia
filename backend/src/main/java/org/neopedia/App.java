@@ -31,7 +31,7 @@ public class App {
     /**
      * DTO record representing a search result for JSON API responses.
      */
-    public record SearchResultResponse(String title, String path, String url, double score) {}
+    public record SearchResultResponse(String title, String level, String excerpt, String path, String url, double score) {}
 
     /**
      * DTO record representing the JSON response structure for the search API endpoint.
@@ -94,7 +94,7 @@ public class App {
                 List<Compiler.SearchResult> results = compiler.search(query, limit);
 
                 List<SearchResultResponse> responseResults = results.stream()
-                        .map(r -> new SearchResultResponse(r.title(), r.path(), r.url(), r.score()))
+                        .map(r -> new SearchResultResponse(r.title(), r.level(), r.excerpt(), r.path(), r.url(), r.score()))
                         .toList();
 
                 ctx.status(200);

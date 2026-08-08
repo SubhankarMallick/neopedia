@@ -126,4 +126,55 @@ public class CompilerTest {
         assertTrue(results.stream().allMatch(result -> result.title().contains("Chemical")));
         assertEquals(2, compiler.search("chemcial reactions", 10).size());
     }
+
+    @Test
+    public void testLevelsComeFromTheFirstH1RatherThanTheFilename(@TempDir Path tempDir) throws IOException {
+        Path contentDir = tempDir.resolve("content");
+        Path publicDir = tempDir.resolve("public");
+        Files.createDirectories(contentDir);
+        Files.writeString(contentDir.resolve("ProgrammingLevel1.md"), "# Programming : Level 1\n\nLearn the basics.");
+        Files.writeString(contentDir.resolve("QuantumMechanicsLevel6.md"), "# Quantum Mechanics: Level 6\n\nAdvanced physics.");
+        Files.writeString(contentDir.resolve("any-name-at-all.md"), "# Calculus : Level 4\n\nDerivatives and integrals.");
+        Files.writeString(contentDir.resolve("bad-level.md"), "# Programming : Level 7\n\nStill published.");
+        Files.writeString(contentDir.resolve("word-level.md"), "# Programming : Level One\n\nStill published.");
+        Files.writeString(contentDir.resolve("missing-level.md"), "# Programming\n\nStill published.");
+
+        Compiler compiler = new Compiler(contentDir, publicDir);
+        assertEquals(6, compiler.compileAll());
+
+        String programmingHtml = Files.readString(publicDir.resolve("ProgrammingLevel1.html"));
+        assertTrue(programmingHtml.contains("<h1>Programming</h1>"));
+        assertTrue(programmingHtml.contains("[ 6–8 ]"));
+        assertFalse(programmingHtml.contains("Programming : Level 1"));
+        assertTrue(Files.readString(publicDir.resolve("QuantumMechanicsLevel6.html")).contains("[ PhD ]"));
+        assertTrue(Files.readString(publicDir.resolve("any-name-at-all.html")).contains("[ Undergraduate ]"));
+        assertTrue(Files.readString(publicDir.resolve("bad-level.html")).contains("[ Unknown ]"));
+        assertTrue(Files.readString(publicDir.resolve("word-level.html")).contains("[ Unknown ]"));
+        assertTrue(Files.readString(publicDir.resolve("missing-level.html")).contains("[ Unknown ]"));
+    }
+
+    @Test
+    public void testSearchRanksTitlesAboveBodyOnlyMatches(@TempDir Path tempDir) throws IOException {
+        Path contentDir = tempDir.resolve("content");
+        Path publicDir = tempDir.resolve("public");
+        Files.createDirectories(contentDir);
+        Files.writeString(contentDir.resolve("index.md"), "# Neopedia Homepage");
+        Files.writeString(contentDir.resolve("NewtonLawsLevel2.md"), "# Newton's Laws of Motion : Level 2\n\nNewton's laws describe forces.");
+        Files.writeString(contentDir.resolve("NewtonFirstLevel2.md"), "# Newton's First Law : Level 2\n\nAn object remains at rest.");
+        Files.writeString(contentDir.resolve("NewtonianMechanicsLevel4.md"), "# Newtonian Mechanics : Level 4\n\nClassical mechanics.");
+        Files.writeString(contentDir.resolve("history.md"), "# History of Physics : Level 2\n\nNewton laws are mentioned here.");
+
+        Compiler compiler = new Compiler(contentDir, publicDir);
+        compiler.compileAll();
+
+        List<Compiler.SearchResult> results = compiler.search("newton laws", 10);
+        assertEquals("Newton's Laws of Motion", results.getFirst().title());
+        assertTrue(results.stream().anyMatch(result -> result.title().equals("Newton's First Law")));
+        assertTrue(results.stream().anyMatch(result -> result.title().equals("Newtonian Mechanics")));
+        assertFalse(results.stream().anyMatch(result -> result.title().equals("History of Physics")));
+        assertEquals("9–10", results.getFirst().level());
+        assertFalse(results.getFirst().excerpt().isBlank());
+        assertTrue(compiler.search("homepage", 10).isEmpty());
+        assertTrue(compiler.search("unrelated astronomy", 10).isEmpty());
+    }
 }

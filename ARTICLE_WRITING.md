@@ -55,6 +55,8 @@ The format you must follow is as follows:
 - **Article name and level** — Use a Heading 1 in the following format:  
   `[Article name] : Level [level number (1 to 6)]`
 
+  The first H1 is the source of truth for the article's level. For example: `# Newton's Laws of Motion : Level 2`. The filename is only for human organization and identification; it has no metadata or naming requirements.
+
 - **Introduction / Abstract** — Use "Introduction" for Levels 1 and 2, and "Abstract" for Levels 3–6.
 
 - **Main content** — You may arrange this as you wish. Long paragraphs? Fine. Tables? Fine. Images? Also fine! Choose the format that best explains the subject.
