@@ -13,7 +13,7 @@ This article aims to delve into the properties, extraction and uses of nickel.
 Nickel is generally prepared from its sulphide and laterite ores.
 
 - **Sulphide ores:** These kind of ores are generally found in Russia, Canada and China. The most important nickel ore is Pentlandite $[(\text{Ni}, \text{Fe})_9\text{S}_8]$, followed by Pyrrhotite ($\text{FeS}$ to $\text{Fe}_7\text{S}_8$) that contains a percentage of nickel as impurities.
-- **Laterite ores:** Another class of nickel ores which are concentrated over millions of years by weathering of Peridotite which initially contains a small percentage of nickel. Over time, these nickel compounds may get concentrated enough in the ground to be profitable for commercial extraction. The major compounds involved are Garnierite (Ni, Mg)₆Si₄O₁₀(OH)₈ which contains the most amount of nickel by mass but nickeliferous limonite $(Fe,Ni)O(OH)•nH_2O$ usually constitutes a greater portion of laterite ores.
+- **Laterite ores:** Another class of nickel ores which are concentrated over millions of years by weathering of Peridotite which initially contains a small percentage of nickel. Over time, these nickel compounds may get concentrated enough in the ground to be profitable for commercial extraction. The major compounds involved are Garnierite $\text{(Ni, Mg)₆Si₄O₁₀(OH)₈}$ which contains the most amount of nickel by mass but nickeliferous limonite $(Fe,Ni)O(OH)•nH_2O$ usually constitutes a greater portion of laterite ores.
 
 ### Extraction and Refining
 
